@@ -4,7 +4,7 @@
 // LCD (serial 2400 baud): D3
 // Temp sensor (ADC): A7 (signal), D2 (power)
 // Clock (i2c): TODO
-// RAM (SPI): TODO
+// RAM (SPI): D12 (SCK), D11 (MISO), D10 (MOSI), D9 (CS)
 // Button: D4
 
 #define PIN_LED_BUILTIN 13
@@ -17,9 +17,15 @@ SoftwareSerial bpi(PIN_LCD_INPUT, PIN_LCD_OUTPUT, SS_INVERTED);
 #define PIN_TMP_POWER 2
 #define PIN_TMP_DATA  A7
 
+// TODO Clock chip init
+
+#define PIN_FRAM_SCK  12
+#define PIN_FRAM_MISO 11
+#define PIN_FRAM_MOSI 10
+#define PIN_FRAM_CS    9
+Adafruit_FRAM_SPI fram(PIN_FRAM_SCK, PIN_FRAM_MISO, PIN_FRAM_MOSI, PIN_FRAM_CS);
+
 #define PIN_BUTTON 4
-
-
 
 // Utility functions
 #include "temperature.h"
@@ -27,6 +33,8 @@ SoftwareSerial bpi(PIN_LCD_INPUT, PIN_LCD_OUTPUT, SS_INVERTED);
 #include "time_step.h"
 
 void setup() {
+	bool ok = true;
+
 	digitalWrite(PIN_LED_BUILTIN, LOW);
 	pinMode(PIN_LED_BUILTIN, OUTPUT);
 
@@ -44,6 +52,19 @@ void setup() {
 	Serial.begin(115200);
 
     bpi.write(bpi_clear, sizeof(bpi_clear));
+
+	if (!fram.begin()) {
+		ok = false;
+		LCD_COMMAND(bpi_line1);
+		lcd_write_string("FRAM error");
+	}
+
+	if (!ok) {
+		lcd_flush_bytes(bpi, LCD_BUFFER_SIZE);
+		// do not execute loop(): https://stackoverflow.com/a/27832896/106302
+		exit(0);
+	}
+
 	Serial.println(millis());
 	time_step(false);
 }
