@@ -42,8 +42,6 @@
  #include <WProgram.h>
 #endif
 
-#include <SPI.h>
-
 typedef enum opcodes_e
 {
   OPCODE_WREN   = 0b0110,     /* Write Enable Latch */

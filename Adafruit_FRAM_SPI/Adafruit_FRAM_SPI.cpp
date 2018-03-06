@@ -31,18 +31,6 @@
     Constructor
 */
 /**************************************************************************/
-Adafruit_FRAM_SPI::Adafruit_FRAM_SPI()
-{
-  _cs = _clk = _mosi = _miso = -1;
-  _framInitialised = false;
-}
-Adafruit_FRAM_SPI::Adafruit_FRAM_SPI(int8_t cs)
-{
-  _cs = cs;
-  _clk = _mosi = _miso = -1;
-  _framInitialised = false;
-}
-
 Adafruit_FRAM_SPI::Adafruit_FRAM_SPI(int8_t clk, int8_t miso, int8_t mosi, int8_t cs)
 {
   _cs = cs; _clk = clk; _mosi = mosi; _miso = miso;
@@ -83,26 +71,9 @@ boolean Adafruit_FRAM_SPI::begin(int8_t cs, uint8_t nAddressSizeBytes)
   pinMode(_cs, OUTPUT);
   digitalWrite(_cs, HIGH);
 
-  if (_clk == -1) { // hardware SPI!
-    SPI.begin();
-
-#ifdef __SAM3X8E__
-    SPI.setClockDivider (9); // 9.3 MHz
-#elif defined(STM32F2XX)
-	// Is seems the photon SPI0 clock runs at 60MHz, but SPI1 runs at
-	// 30MHz, so the DIV will need to change if this is ever extended
-	// to cover SPI1
-	SPI.setClockDivider (SPI_CLOCK_DIV4); // Particle Photon SPI @ 15MHz
-#else
-	SPI.setClockDivider (SPI_CLOCK_DIV2); // 8 MHz
-#endif
-
-    SPI.setDataMode(SPI_MODE0);
-  } else {
-    pinMode(_clk, OUTPUT);
-    pinMode(_mosi, OUTPUT);
-    pinMode(_miso, INPUT);
-  }
+  pinMode(_clk, OUTPUT);
+  pinMode(_mosi, OUTPUT);
+  pinMode(_miso, INPUT);
 
   /* Make sure we're actually connected */
   uint8_t manufID;
@@ -303,21 +274,17 @@ void Adafruit_FRAM_SPI::setAddressSize(uint8_t nAddressSize)
 }
 
 uint8_t Adafruit_FRAM_SPI::SPItransfer(uint8_t x) {
-  if (_clk == -1) {
-    return SPI.transfer(x);
-  } else {
-    // Serial.println("Software SPI");
-    uint8_t reply = 0;
-    for (int i=7; i>=0; i--) {
-      reply <<= 1;
-      digitalWrite(_clk, LOW);
-      digitalWrite(_mosi, x & (1<<i));
-      digitalWrite(_clk, HIGH);
-      if (digitalRead(_miso))
-	reply |= 1;
-    }
-    return reply;
+  // Serial.println("Software SPI");
+  uint8_t reply = 0;
+  for (int i=7; i>=0; i--) {
+    reply <<= 1;
+    digitalWrite(_clk, LOW);
+    digitalWrite(_mosi, x & (1<<i));
+    digitalWrite(_clk, HIGH);
+    if (digitalRead(_miso))
+      reply |= 1;
   }
+  return reply;
 }
 
 void Adafruit_FRAM_SPI::writeAddress(uint32_t addr)
