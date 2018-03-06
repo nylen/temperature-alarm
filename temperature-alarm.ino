@@ -1,4 +1,5 @@
 #include <SoftwareSerial.h>
+#include "Adafruit_FRAM_SPI/Adafruit_FRAM_SPI.cpp"
 
 // LCD (serial 2400 baud): D3
 // Temp sensor (ADC): A7 (signal), D2 (power)
