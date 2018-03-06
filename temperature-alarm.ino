@@ -71,7 +71,7 @@ void loop() {
 		lcd_write_string("test line 2 long string");
 	}
 
-	/* 8 bytes may take 16ms */
+	/* 8 bytes may take up to 16ms */
 	lcd_flush_bytes(bpi, 8);
 
 	time_step();
