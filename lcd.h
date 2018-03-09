@@ -9,7 +9,7 @@ const byte bpi_clear[] = { 254,1 /* also send (254,128) if 9600 baud */ };
 
 #define LCD_BUFFER_SIZE 64
 byte lcd_buffer_[LCD_BUFFER_SIZE];
-circular_buffer<byte> lcd_buffer(lcd_buffer_, LCD_BUFFER_SIZE);
+circular_buffer<unsigned char> lcd_buffer(lcd_buffer_, LCD_BUFFER_SIZE);
 
 void lcd_write_string(const char *text) {
 	size_t i = 0;
@@ -18,9 +18,18 @@ void lcd_write_string(const char *text) {
 	}
 }
 
-void lcd_write_char(char c) {
+void lcd_write_char(unsigned char c) {
 	if (!lcd_buffer.full()) {
 		lcd_buffer.put(c);
+	}
+}
+
+void lcd_write_string(const __FlashStringHelper *ftext) {
+	// https://arduino.stackexchange.com/a/4631
+	const char PROGMEM *p = (const char PROGMEM *) ftext;
+	unsigned char c;
+	while (c = pgm_read_byte(p++)) {
+		lcd_write_char(c);
 	}
 }
 

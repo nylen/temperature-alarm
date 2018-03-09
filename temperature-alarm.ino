@@ -60,7 +60,7 @@ void setup() {
 	if (!fram.begin()) {
 		ok = false;
 		LCD_COMMAND(bpi_line1);
-		lcd_write_string("FRAM error");
+		lcd_write_string(F("Memory error"));
 	}
 
 	if (!ok) {
