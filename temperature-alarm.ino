@@ -40,8 +40,8 @@ void setup() {
 	digitalWrite(PIN_TMP_POWER, LOW);
 	pinMode(PIN_TMP_POWER, OUTPUT);
 
-    digitalWrite(PIN_LCD_OUTPUT, LOW);
-    pinMode(PIN_LCD_OUTPUT, OUTPUT);
+	digitalWrite(PIN_LCD_OUTPUT, LOW);
+	pinMode(PIN_LCD_OUTPUT, OUTPUT);
 
 	pinMode(PIN_BUTTON, INPUT_PULLUP);
 
@@ -51,12 +51,12 @@ void setup() {
 	digitalWrite(PIN_ALARM, LOW);
 	pinMode(PIN_ALARM, OUTPUT);
 
-    bpi.begin(2400);
-    delay(10);
+	bpi.begin(2400);
+	delay(10);
 
 	Serial.begin(115200);
 
-    bpi.write(bpi_clear, sizeof(bpi_clear));
+	bpi.write(bpi_clear, sizeof(bpi_clear));
 
 	if (!rtc.begin()) {
 		ok = false;
