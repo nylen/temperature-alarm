@@ -1,9 +1,10 @@
 #include <SoftwareSerial.h>
+#include "RTClib/RTClib.cpp"
 #include "Adafruit_FRAM_SPI/Adafruit_FRAM_SPI.cpp"
 
 // LCD (serial 2400 baud): D3
 // Temp sensor (ADC): A7 (signal), D2 (power)
-// Clock (i2c): TODO
+// Clock (i2c): A5 (SCL), A4 (SDA)
 // RAM (SPI): D12 (SCK), D11 (MISO), D10 (MOSI), D9 (CS)
 // Button: D4
 
@@ -15,7 +16,7 @@ SoftwareSerial bpi(PIN_LCD_INPUT, PIN_LCD_OUTPUT, SS_INVERTED);
 #define PIN_TMP_POWER 2
 #define PIN_TMP_DATA  A7
 
-// TODO Clock chip init
+RTC_DS3231 rtc;
 
 #define PIN_FRAM_SCK  12
 #define PIN_FRAM_MISO 11
@@ -57,9 +58,15 @@ void setup() {
 
     bpi.write(bpi_clear, sizeof(bpi_clear));
 
-	if (!fram.begin()) {
+	if (!rtc.begin()) {
 		ok = false;
 		LCD_COMMAND(bpi_line1);
+		lcd_write_string(F("Clock error"));
+	}
+
+	if (!fram.begin()) {
+		ok = false;
+		LCD_COMMAND(bpi_line2);
 		lcd_write_string(F("Memory error"));
 	}
 
@@ -70,6 +77,23 @@ void setup() {
 	}
 
 	Serial.println(millis());
+
+	if (rtc.lostPower()) {
+		// TODO: Reset any timestamps saved in FRAM
+
+		// Set date/time to when this program was compiled
+		rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+		// Display a message indicating that clock was reset
+		LCD_COMMAND(bpi_line1);
+		lcd_write_string(F("Check clock batt"));
+		LCD_COMMAND(bpi_line2);
+		lcd_write_string(F("Press button"));
+		lcd_flush_bytes(bpi, LCD_BUFFER_SIZE);
+		// Wait for button press and release
+		while (!is_button_pressed());
+		while (is_button_pressed());
+	}
+
 	time_step(false);
 }
 

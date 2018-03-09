@@ -9,6 +9,6 @@ ARDUINO_PORT  = /dev/ttyUSB0
 AVRDUDE_ARD_BAUDRATE = 57600
 ARDUINO_DIR   = /usr/share/arduino/
 USER_LIB_PATH = $(realpath ./libraries)
-ARDUINO_LIBS  = SoftwareSerial
+ARDUINO_LIBS  = SoftwareSerial Wire
 
 include /usr/share/arduino/Arduino.mk
