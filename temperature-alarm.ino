@@ -7,8 +7,6 @@
 // RAM (SPI): D12 (SCK), D11 (MISO), D10 (MOSI), D9 (CS)
 // Button: D4
 
-#define PIN_LED_BUILTIN 13
-
 #define PIN_LCD_INPUT  255 // none
 #define PIN_LCD_OUTPUT 3
 #define SS_INVERTED 1
@@ -26,17 +24,17 @@ SoftwareSerial bpi(PIN_LCD_INPUT, PIN_LCD_OUTPUT, SS_INVERTED);
 Adafruit_FRAM_SPI fram(PIN_FRAM_SCK, PIN_FRAM_MISO, PIN_FRAM_MOSI, PIN_FRAM_CS);
 
 #define PIN_BUTTON 4
+#define PIN_LED_BUILTIN 13
+#define PIN_ALARM 5
 
 // Utility functions
-#include "temperature.h"
 #include "lcd.h"
+#include "temperature.h"
+#include "button.h"
 #include "time_step.h"
 
 void setup() {
 	bool ok = true;
-
-	digitalWrite(PIN_LED_BUILTIN, LOW);
-	pinMode(PIN_LED_BUILTIN, OUTPUT);
 
 	digitalWrite(PIN_TMP_POWER, LOW);
 	pinMode(PIN_TMP_POWER, OUTPUT);
@@ -45,6 +43,12 @@ void setup() {
     pinMode(PIN_LCD_OUTPUT, OUTPUT);
 
 	pinMode(PIN_BUTTON, INPUT_PULLUP);
+
+	digitalWrite(PIN_LED_BUILTIN, LOW);
+	pinMode(PIN_LED_BUILTIN, OUTPUT);
+
+	digitalWrite(PIN_ALARM, LOW);
+	pinMode(PIN_ALARM, OUTPUT);
 
     bpi.begin(2400);
     delay(10);
@@ -91,6 +95,9 @@ void loop() {
 		LCD_COMMAND(bpi_line2);
 		lcd_write_string("test line 2 long string");
 	}
+
+	digitalWrite(PIN_LED_BUILTIN, is_button_pressed() ? HIGH : LOW);
+	digitalWrite(PIN_ALARM, is_button_pressed() ? HIGH : LOW);
 
 	/* 8 bytes may take up to 16ms */
 	lcd_flush_bytes(bpi, 8);
