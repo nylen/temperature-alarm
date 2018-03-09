@@ -1,6 +1,7 @@
 #include <SoftwareSerial.h>
 #include "RTClib/RTClib.cpp"
 #include "Adafruit_FRAM_SPI/Adafruit_FRAM_SPI.cpp"
+#include "Adafruit_NeoPixel/Adafruit_NeoPixel.cpp"
 
 // ARDUINO PINS USED BY THIS PROJECT
 // =================================
@@ -8,6 +9,7 @@
 // Temp sensor (ADC): A7 (signal), D2 (power)
 // Clock (i2c): A5 (SCL), A4 (SDA)
 // RAM (SPI): D12 (SCK), D11 (MISO), D10 (MOSI), D9 (CS)
+// LED strip (WS2812): D7
 // Button: D4
 // Alarm (buzzer): D5
 // LED (built-in): D13
@@ -28,6 +30,10 @@ RTC_DS3231 rtc;
 #define PIN_FRAM_CS    9
 Adafruit_FRAM_SPI fram(PIN_FRAM_SCK, PIN_FRAM_MISO, PIN_FRAM_MOSI, PIN_FRAM_CS);
 
+#define PIN_LEDS 7
+#define NUM_LEDS 21
+Adafruit_NeoPixel strip(NUM_LEDS, PIN_LEDS, NEO_GRB + NEO_KHZ800);
+
 #define PIN_BUTTON 4
 #define PIN_ALARM 5
 #define PIN_LED_BUILTIN 13
@@ -35,6 +41,7 @@ Adafruit_FRAM_SPI fram(PIN_FRAM_SCK, PIN_FRAM_MISO, PIN_FRAM_MOSI, PIN_FRAM_CS);
 // Utility functions
 #include "lcd.h"
 #include "temperature.h"
+#include "leds.h"
 #include "button.h"
 #include "time_step.h"
 
@@ -46,6 +53,9 @@ void setup() {
 
 	digitalWrite(PIN_LCD_OUTPUT, LOW);
 	pinMode(PIN_LCD_OUTPUT, OUTPUT);
+
+	digitalWrite(PIN_LEDS, LOW);
+	pinMode(PIN_LEDS, OUTPUT);
 
 	pinMode(PIN_BUTTON, INPUT_PULLUP);
 
@@ -102,6 +112,8 @@ void setup() {
 }
 
 void loop() {
+	led_step();
+
 	if (time_step_counter % STEPS_TEMP_READING == 0) {
 		int temp = lround(read_temp());
 		LCD_COMMAND(bpi_line1);
