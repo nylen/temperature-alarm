@@ -2,11 +2,15 @@
 #include "RTClib/RTClib.cpp"
 #include "Adafruit_FRAM_SPI/Adafruit_FRAM_SPI.cpp"
 
+// ARDUINO PINS USED BY THIS PROJECT
+// =================================
 // LCD (serial 2400 baud): D3
 // Temp sensor (ADC): A7 (signal), D2 (power)
 // Clock (i2c): A5 (SCL), A4 (SDA)
 // RAM (SPI): D12 (SCK), D11 (MISO), D10 (MOSI), D9 (CS)
 // Button: D4
+// Alarm (buzzer): D5
+// LED (built-in): D13
 
 #define PIN_LCD_INPUT  255 // none
 #define PIN_LCD_OUTPUT 3
@@ -25,8 +29,8 @@ RTC_DS3231 rtc;
 Adafruit_FRAM_SPI fram(PIN_FRAM_SCK, PIN_FRAM_MISO, PIN_FRAM_MOSI, PIN_FRAM_CS);
 
 #define PIN_BUTTON 4
-#define PIN_LED_BUILTIN 13
 #define PIN_ALARM 5
+#define PIN_LED_BUILTIN 13
 
 // Utility functions
 #include "lcd.h"
