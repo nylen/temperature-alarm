@@ -77,8 +77,8 @@ void mem_write_time_power_off(TimeSpan *ts) {
 	_mem_write_uint32(ADDR_TIME_POWER_OFF, (uint32_t)ts->totalseconds());
 }
 
-byte mem_read_alarm_temp() {
-	return fram.read8(ADDR_ALARM_TEMP);
+uint8_t mem_read_alarm_temp() {
+	return min(99, fram.read8(ADDR_ALARM_TEMP));
 }
 
 void mem_write_alarm_temp(uint8_t temp) {

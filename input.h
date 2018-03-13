@@ -93,10 +93,8 @@ void input_time_step() {
 					// Save the input value as the alarm temperature
 					alarm_temp = input_val;
 					mem_write_alarm_temp(alarm_temp);
-					// Display a temporary message
-					LCD_COMMAND(bpi_line1);
-					lcd_write_string(F("Alarm temp: "));
-					lcd_write_integer(input_val);
+					// Display the new alarm temperature
+					alarm_show_current_temp();
 				} else {
 					// Toggle alarm sound
 					alarm_set_sound_enabled(!alarm_is_sound_enabled());
@@ -107,9 +105,9 @@ void input_time_step() {
 					} else {
 						lcd_write_string(F("Sound disabled"));
 					}
+					lcd_write_4_spaces();
+					lcd_set_temporary_message();
 				}
-				lcd_write_4_spaces();
-				lcd_set_temporary_message();
 				LCD_COMMAND(bpi_line2);
 				lcd_write_16_spaces();
 			} else if (millis() - input_started > MS_INPUT_EXPIRE_TIME) {

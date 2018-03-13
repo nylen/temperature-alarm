@@ -1,7 +1,8 @@
 #define ALARM_HAS_ALARM 0x1
 #define ALARM_HAD_ALARM_LAST_TIME_STEP 0x2
 #define ALARM_SOUND_ENABLED 0x4
-uint8_t alarm_state = 0;
+#define ALARM_CAN_TRIGGER 0x8
+uint8_t alarm_state = ALARM_CAN_TRIGGER;
 
 uint8_t alarm_temp = 255;
 
@@ -15,6 +16,7 @@ bool alarm_was_active_last_time_step() {
 
 void alarm_set() {
 	alarm_state |= ALARM_HAS_ALARM;
+	alarm_state &= ~ALARM_CAN_TRIGGER;
 }
 
 void alarm_clear() {
@@ -25,7 +27,12 @@ void alarm_time_step() {
 	if (alarm_active()) {
 		alarm_state |= ALARM_HAD_ALARM_LAST_TIME_STEP;
 	} else {
-		alarm_state &= ~ALARM_HAS_ALARM;
+		alarm_state &= ~ALARM_HAD_ALARM_LAST_TIME_STEP;
+	}
+	if ((alarm_state & ALARM_CAN_TRIGGER) > 0 && tempCurrent >= alarm_temp) {
+		alarm_set();
+	} else if (tempCurrent < alarm_temp) {
+		alarm_state |= ALARM_CAN_TRIGGER;
 	}
 }
 
@@ -54,4 +61,17 @@ void alarm_reset() {
 	tempMin = tempMax = tempCurrent = read_temp_uint8();
 	alarm_clear();
 	save_alarm_data();
+}
+
+void alarm_show_current_temp() {
+	LCD_COMMAND(bpi_line1);
+	lcd_write_string(F("Alarm temp: "));
+	lcd_write_integer(alarm_temp);
+	lcd_write_4_spaces();
+	if (!alarm_is_sound_enabled()) {
+		lcd_write_char(254);
+		lcd_write_char(128 + 15);
+		lcd_write_char(235);
+	}
+	lcd_set_temporary_message();
 }

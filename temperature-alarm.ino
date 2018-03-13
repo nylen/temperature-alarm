@@ -78,10 +78,9 @@ void setup() {
 
 	bpi.begin(2400);
 	delay(10);
-
-	Serial.begin(115200);
-
 	bpi.write(bpi_clear, sizeof(bpi_clear));
+
+	led_clear_all();
 
 	if (!rtc.begin()) {
 		ok = false;
@@ -100,6 +99,8 @@ void setup() {
 		// do not execute loop(): https://stackoverflow.com/a/27832896/106302
 		exit(0);
 	}
+
+	Serial.begin(115200);
 
 	tempCurrent = read_temp_uint8();
 	mem_read_min_max_temp(&tempMin, &tempMax);
@@ -142,11 +143,11 @@ void setup() {
 		//   = dtCurrent
 		// Check for error conditions that make the equations unsatisfiable.
 		// Any power-off times longer than 90 days will also cause a reset.
-		Serial.print("dtStart="); Serial.println(dtStart.unixtime());
-		Serial.print("dtLastOn="); Serial.println(dtLastOn.unixtime());
-		Serial.print("dtCurrent="); Serial.println(dtCurrent.unixtime());
-		Serial.print("tsPowerOffPrev="); Serial.println(tsPowerOffPrev.totalseconds());
-		Serial.print("tsPowerOff="); Serial.println(tsPowerOff.totalseconds());
+		Serial.print(F("dtStart=")); Serial.println(dtStart.unixtime());
+		Serial.print(F("dtLastOn=")); Serial.println(dtLastOn.unixtime());
+		Serial.print(F("dtCurrent=")); Serial.println(dtCurrent.unixtime());
+		Serial.print(F("tsPowerOffPrev=")); Serial.println(tsPowerOffPrev.totalseconds());
+		Serial.print(F("tsPowerOff=")); Serial.println(tsPowerOff.totalseconds());
 		if (
 			dtLastOn.isBefore(dtStart) ||
 			dtLastOn.isBefore(dtStart + tsPowerOffPrev) ||
@@ -173,14 +174,14 @@ void setup() {
 		}
 	}
 
-	led_clear_all();
-
-	Serial.print("init ms="); Serial.println(millis());
+	Serial.print(F("init ms=")); Serial.println(millis());
 	time_step();
 }
 
 void loop() {
+	// Trigger alarm if temperature is (newly) too high
 	alarm_time_step();
+	// Check for button presses
 	button_time_step();
 
 	if (time_step_counter % STEPS_TEMP_READING == 0) {
@@ -209,17 +210,17 @@ void loop() {
 			// Write min temperature
 			lcd_write_char('L');
 			lcd_write_integer(tempMin);
-			lcd_write_char(223);
+			lcd_write_char(tempMin >= alarm_temp ? '!' : 223);
 			lcd_write_char(' ');
 			// Write current temperature
 			lcd_write_char('=');
 			lcd_write_integer(tempCurrent);
-			lcd_write_char(223);
+			lcd_write_char(tempCurrent >= alarm_temp ? '!' : 223);
 			lcd_write_char(' ');
 			// Write min temperature
 			lcd_write_char('H');
 			lcd_write_integer(tempMax);
-			lcd_write_char(223);
+			lcd_write_char(tempMax >= alarm_temp ? '!' : 223);
 			lcd_write_4_spaces();
 		}
 	}
@@ -241,10 +242,20 @@ void loop() {
 		digitalWrite(PIN_ALARM, LOW);
 	}
 
-	if (!input_mode_active() && was_button_pressed_long()) {
-		clear_button_press();
-		alarm_reset();
-		input_mode_enable();
+	if (!input_mode_active()) {
+		if (was_button_pressed_long()) {
+			clear_button_press();
+			// Reset all saved dates/times
+			alarm_reset();
+			// Clear any temporary message
+			lcd_clear_temporary_message();
+			// Enter temperature input method
+			input_mode_enable();
+		} else if (was_button_pressed_short()) {
+			clear_button_press();
+			// Show the current alarm temperature
+			alarm_show_current_temp();
+		}
 	}
 
 	input_time_step();

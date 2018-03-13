@@ -127,6 +127,10 @@ void lcd_set_temporary_message() {
 	}
 }
 
+void lcd_clear_temporary_message() {
+	lcd_temp_message_start = 0;
+}
+
 void lcd_set_temporary_message(const __FlashStringHelper *ftext) {
 	LCD_COMMAND(bpi_line1);
 	lcd_write_string(ftext);
