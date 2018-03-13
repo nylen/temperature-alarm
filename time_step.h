@@ -39,8 +39,8 @@ uint8_t second_step_message_index() {
 #define STEPS_SWITCH_SOUND_ON_OFF 10
 
 uint32_t time_step_start = 0;
-uint32_t time_step_counter = 0;
-#define TIME_STEP_WRAP (((uint32_t)20)*3600)
+uint8_t time_step_counter = 0;
+#define TIME_STEP_WRAP 100
 
 void time_step() {
 	time_step_counter = (time_step_counter + 1) % TIME_STEP_WRAP;
