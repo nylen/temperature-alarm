@@ -1,3 +1,37 @@
+// Actions taken every N seconds (ensure that N % 60 == 0)
+#define SECONDS_SWITCH_TIME_MESSAGE 2
+#define SECONDS_SAVE_TIME_INFO 5
+
+// Time-based messages
+#define TIME_MESSAGE_ON  0
+#define TIME_MESSAGE_OFF 1
+#define TIME_MESSAGE_HOT 2
+
+uint8_t second_step_counter = 0;
+
+uint8_t second_step_message_index() {
+	second_step_counter = (second_step_counter + 1) % (
+		SECONDS_SWITCH_TIME_MESSAGE * (
+			1 +
+			(tsPowerOff.totalseconds() > 0 ? 1 : 0) +
+			(tsOverTemp.totalseconds() > 0 ? 1 : 0)
+		)
+	);
+	if (second_step_counter < SECONDS_SWITCH_TIME_MESSAGE) {
+		return TIME_MESSAGE_ON;
+	} else if (second_step_counter < 2 * SECONDS_SWITCH_TIME_MESSAGE) {
+		// We are showing 2 or 3 messages.
+		if (tsPowerOff.totalseconds() > 0) {
+			return TIME_MESSAGE_OFF;
+		} else {
+			return TIME_MESSAGE_HOT;
+		}
+	} else {
+		// We are showing all 3 messages.
+		return TIME_MESSAGE_HOT;
+	}
+}
+
 // Time steps (simple multitasking using time-slicing)
 
 #define MS_TIME_STEP 50

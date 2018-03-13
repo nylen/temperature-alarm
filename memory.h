@@ -4,6 +4,7 @@
 #define ADDR_ALARM_TEMP     16 // 1 byte
 #define ADDR_SOUND_ENABLED  17 // 1 byte
 #define ADDR_MIN_MAX_TEMP   18 // 2 bytes
+#define ADDR_TIME_OVER_TEMP 20 // 4 bytes
 
 void _mem_read_DateTime(uint32_t addr, DateTime *dt) {
 	uint16_t y = fram.read8(addr++);
@@ -75,6 +76,14 @@ void mem_read_time_power_off(TimeSpan *ts) {
 
 void mem_write_time_power_off(TimeSpan *ts) {
 	_mem_write_uint32(ADDR_TIME_POWER_OFF, (uint32_t)ts->totalseconds());
+}
+
+void mem_read_time_over_temp(TimeSpan *ts) {
+	*ts = TimeSpan((int32_t)_mem_read_uint32(ADDR_TIME_OVER_TEMP));
+}
+
+void mem_write_time_over_temp(TimeSpan *ts) {
+	_mem_write_uint32(ADDR_TIME_OVER_TEMP, (uint32_t)ts->totalseconds());
 }
 
 uint8_t mem_read_alarm_temp() {

@@ -43,13 +43,10 @@ DateTime dtStart;
 DateTime dtLast;
 DateTime dtCurrent;
 TimeSpan tsPowerOff;
+TimeSpan tsOverTemp;
 uint8_t tempMin;
 uint8_t tempMax;
 uint8_t tempCurrent;
-
-// Actions taken every N seconds (ensure that N % 60 == 0)
-#define SECONDS_SWITCH_UP_DOWN 2
-#define SECONDS_SAVE_TIME_INFO 5
 
 // Utility functions
 #include "lcd.h"
@@ -137,6 +134,7 @@ void setup() {
 		mem_read_time_power_off(&tsPowerOffPrev);
 		dtCurrent = rtc.now();
 		tsPowerOff = dtCurrent - dtLastOn;
+		mem_read_time_over_temp(&tsOverTemp);
 		// Equation 1:
 		//   dtStart
 		//   + (time previously online)
@@ -153,12 +151,17 @@ void setup() {
 		Serial.print(F("dtCurrent=")); Serial.println(dtCurrent.unixtime());
 		Serial.print(F("tsPowerOffPrev=")); Serial.println(tsPowerOffPrev.totalseconds());
 		Serial.print(F("tsPowerOff=")); Serial.println(tsPowerOff.totalseconds());
+		Serial.print(F("tsOverTemp=")); Serial.println(tsOverTemp.totalseconds());
 		if (
 			dtLastOn.isBefore(dtStart) ||
 			dtLastOn.isBefore(dtStart + tsPowerOffPrev) ||
 			tsPowerOffPrev.totalseconds() / 3600 / 24 > 90 ||
 			dtCurrent.isBefore(dtLastOn) ||
 			tsPowerOff.totalseconds() / 3600 / 24 > 90 ||
+			(tsOverTemp - (
+				// time on (should always be <= time hot)
+				dtCurrent - dtStart - tsPowerOff - tsPowerOffPrev
+			)).totalseconds() > 0 ||
 			tempMax < tempMin
 		) {
 			lcd_set_temporary_message(F("Saved data reset"));
@@ -199,17 +202,27 @@ void loop() {
 		tempMax = max(tempMax, tempCurrent);
 		const uint8_t seconds = dtCurrent.second();
 
+		if (tempCurrent >= alarm_temp) {
+			tsOverTemp = tsOverTemp + TimeSpan(1);
+		}
+
 		if (!lcd_showing_temp_message()) {
 			LCD_COMMAND(bpi_line1);
-			if (
-				(seconds / SECONDS_SWITCH_UP_DOWN) % 2 &&
-				tsPowerOff.totalseconds()
-			) {
-				lcd_write_string(F("Off: "));
-				lcd_write_TimeSpan(tsPowerOff);
-			} else {
-				lcd_write_string(F("On: "));
-				lcd_write_TimeSpan(dtCurrent - dtStart - tsPowerOff);
+			switch (second_step_message_index()) {
+				case TIME_MESSAGE_ON:
+					lcd_write_string(F("On: "));
+					lcd_write_TimeSpan(dtCurrent - dtStart - tsPowerOff);
+					break;
+				case TIME_MESSAGE_OFF:
+					lcd_write_string(F("OFF: "));
+					lcd_write_TimeSpan(tsPowerOff);
+					lcd_write_char('!');
+					break;
+				case TIME_MESSAGE_HOT:
+					lcd_write_string(F("HOT: "));
+					lcd_write_TimeSpan(tsOverTemp);
+					lcd_write_char('!');
+					break;
 			}
 			lcd_write_16_spaces();
 		}

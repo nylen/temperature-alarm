@@ -53,11 +53,12 @@ void save_alarm_data() {
 	mem_write_latest_time(&dtCurrent);
 	mem_write_time_power_off(&tsPowerOff);
 	mem_write_min_max_temp(tempMin, tempMax);
+	mem_write_time_over_temp(&tsOverTemp);
 }
 
 void alarm_reset() {
 	dtStart = dtCurrent = rtc.now();
-	tsPowerOff = TimeSpan(0);
+	tsPowerOff = tsOverTemp = TimeSpan(0);
 	tempMin = tempMax = tempCurrent = read_temp_uint8();
 	alarm_clear();
 	save_alarm_data();
