@@ -95,7 +95,7 @@ void input_time_step() {
 				// A value of zero has a special meaning: toggle alarm sound
 				if (input_val) {
 					// Save the input value as the alarm temperature
-					alarm_temp = input_val;
+					alarm_temp = input_val + TEMP_OFFSET;
 					mem_write_alarm_temp(alarm_temp);
 					// Display the new alarm temperature
 					alarm_show_current_temp();

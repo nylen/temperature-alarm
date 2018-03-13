@@ -29,8 +29,10 @@ double read_temp() {
 	return temp;
 }
 
+// NOTE: Shifted by TEMP_OFFSET degrees!
+// If this function returns 0 then the temperature is -TEMP_OFFSET!
 uint8_t read_temp_uint8() {
-	double temp = read_temp();
+	double temp = read_temp() + TEMP_OFFSET;
 	if (temp <= 0) {
 		return 0;
 	}

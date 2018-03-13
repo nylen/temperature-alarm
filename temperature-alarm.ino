@@ -44,6 +44,9 @@ DateTime dtLast;
 DateTime dtCurrent;
 TimeSpan tsPowerOff;
 TimeSpan tsOverTemp;
+// Temperatures - NOTE: Shifted by TEMP_OFFSET degrees!
+// If this variable is 0 then the temperature is -TEMP_OFFSET!
+#define TEMP_OFFSET 20
 uint8_t tempMin;
 uint8_t tempMax;
 uint8_t tempCurrent;
@@ -234,17 +237,19 @@ void loop() {
 			LCD_COMMAND(bpi_line2);
 			// Write min temperature
 			lcd_write_char('L');
-			lcd_write_integer(tempMin);
+			lcd_write_integer((int16_t)tempMin - TEMP_OFFSET);
 			lcd_write_char(tempMin >= alarm_temp ? '!' : 223);
 			lcd_write_char(' ');
 			// Write current temperature
-			lcd_write_char('=');
-			lcd_write_integer(tempCurrent);
+			if (tempCurrent >= TEMP_OFFSET) {
+				lcd_write_char('=');
+			}
+			lcd_write_integer((int16_t)tempCurrent - TEMP_OFFSET);
 			lcd_write_char(tempCurrent >= alarm_temp ? '!' : 223);
 			lcd_write_char(' ');
 			// Write min temperature
 			lcd_write_char('H');
-			lcd_write_integer(tempMax);
+			lcd_write_integer((int16_t)tempMax - TEMP_OFFSET);
 			lcd_write_char(tempMax >= alarm_temp ? '!' : 223);
 			lcd_write_4_spaces();
 		}

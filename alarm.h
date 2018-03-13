@@ -3,6 +3,8 @@
 #define ALARM_CAN_TRIGGER 0x4
 uint8_t alarm_state = ALARM_CAN_TRIGGER;
 
+// Alarm temperature - NOTE: Shifted by 20 degrees!
+// If this variable is 0 then the temperature is -20!
 uint8_t alarm_temp = 255;
 
 bool alarm_active() {
@@ -59,7 +61,7 @@ void alarm_reset() {
 void alarm_show_current_temp() {
 	LCD_COMMAND(bpi_line1);
 	lcd_write_string(F("Alarm temp: "));
-	lcd_write_integer(alarm_temp);
+	lcd_write_integer((int16_t)alarm_temp - TEMP_OFFSET);
 	lcd_write_4_spaces();
 	if (!alarm_is_sound_enabled()) {
 		lcd_write_char(254);
