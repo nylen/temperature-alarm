@@ -10,7 +10,7 @@ void led_set_all(uint8_t r, uint8_t g, uint8_t b) {
 
 void led_step() {
 	led_set_all(0, 0, 0);
-	strip.setPixelColor(led_state & 0x7f, 255, 100, 0);
+	strip.setPixelColor(led_state & 0x7f, 255, 75, 0);
 	strip.show();
 	if (led_state & 0x80) {
 		if (++led_state == (0x80 | (NUM_LEDS - 1))) {

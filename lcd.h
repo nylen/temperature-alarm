@@ -127,11 +127,18 @@ void lcd_flush_bytes(SoftwareSerial serial, byte count) {
 	}
 }
 
+void lcd_set_temporary_message() {
+	lcd_temp_message_start = millis();
+	if (!lcd_temp_message_start) {
+		lcd_temp_message_start = 1;
+	}
+}
+
 void lcd_set_temporary_message(const __FlashStringHelper *ftext) {
 	LCD_COMMAND(bpi_line1);
 	lcd_write_string(ftext);
 	lcd_write_4_spaces();
-	lcd_temp_message_start = millis() || 1;
+	lcd_set_temporary_message();
 }
 
 bool lcd_showing_temp_message() {

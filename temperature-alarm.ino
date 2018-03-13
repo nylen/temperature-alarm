@@ -38,6 +38,14 @@ Adafruit_NeoPixel strip(NUM_LEDS, PIN_LEDS, NEO_GRB + NEO_KHZ800);
 #define PIN_ALARM 5
 #define PIN_LED_BUILTIN 13
 
+// Global variables
+DateTime dtStart;
+DateTime dtCurrent;
+TimeSpan tsPowerOff;
+uint8_t tempMin;
+uint8_t tempMax;
+uint8_t tempCurrent;
+
 // Utility functions
 #include "lcd.h"
 #include "temperature.h"
@@ -46,30 +54,7 @@ Adafruit_NeoPixel strip(NUM_LEDS, PIN_LEDS, NEO_GRB + NEO_KHZ800);
 #include "button.h"
 #include "time_step.h"
 #include "alarm.h"
-
-// Global variables
-DateTime dtStart;
-DateTime dtCurrent;
-TimeSpan tsPowerOff;
-uint8_t tempMin;
-uint8_t tempMax;
-uint8_t tempCurrent;
-uint8_t alarmTemp;
-
-void save_alarm_data() {
-	mem_write_start_time(&dtStart);
-	mem_write_latest_time(&dtCurrent);
-	mem_write_time_power_off(&tsPowerOff);
-	mem_write_min_max_temp(tempMin, tempMax);
-}
-
-void alarm_reset() {
-	dtStart = dtCurrent = rtc.now();
-	tsPowerOff = TimeSpan(0);
-	tempMin = tempMax = tempCurrent = read_temp_uint8();
-	alarm_clear();
-	save_alarm_data();
-}
+#include "input.h"
 
 void setup() {
 	bool ok = true;
@@ -120,7 +105,8 @@ void setup() {
 	mem_read_min_max_temp(&tempMin, &tempMax);
 	tempMin = min(tempMin, tempCurrent);
 	tempMax = max(tempMax, tempCurrent);
-	alarmTemp = mem_read_alarm_temp();
+	alarm_temp = mem_read_alarm_temp();
+	alarm_set_sound_enabled(mem_read_sound_enabled());
 
 	if (rtc.lostPower()) {
 		// Set date/time to when this program was compiled
@@ -156,6 +142,11 @@ void setup() {
 		//   = dtCurrent
 		// Check for error conditions that make the equations unsatisfiable.
 		// Any power-off times longer than 90 days will also cause a reset.
+		Serial.print("dtStart="); Serial.println(dtStart.unixtime());
+		Serial.print("dtLastOn="); Serial.println(dtLastOn.unixtime());
+		Serial.print("dtCurrent="); Serial.println(dtCurrent.unixtime());
+		Serial.print("tsPowerOffPrev="); Serial.println(tsPowerOffPrev.totalseconds());
+		Serial.print("tsPowerOff="); Serial.println(tsPowerOff.totalseconds());
 		if (
 			dtLastOn.isBefore(dtStart) ||
 			dtLastOn.isBefore(dtStart + tsPowerOffPrev) ||
@@ -168,7 +159,7 @@ void setup() {
 			alarm_reset();
 		} else {
 			// Power losses of less than 5 minutes will not cause an alarm
-			if (tsPowerOff.totalseconds() >= 5/* * 60 */) {
+			if (tsPowerOff.totalseconds() >= 5 * 60) {
 				alarm_set();
 				tsPowerOff = tsPowerOff + tsPowerOffPrev;
 			} else if (tsPowerOffPrev.totalseconds()) {
@@ -182,12 +173,15 @@ void setup() {
 		}
 	}
 
-	Serial.println(millis());
+	led_clear_all();
+
+	Serial.print("init ms="); Serial.println(millis());
 	time_step();
 }
 
 void loop() {
 	alarm_time_step();
+	button_time_step();
 
 	if (time_step_counter % STEPS_TEMP_READING == 0) {
 		tempCurrent = read_temp_uint8();
@@ -210,7 +204,7 @@ void loop() {
 			lcd_write_16_spaces();
 		}
 
-		if (true/*TODO: !is_accepting_temp_input()*/) {
+		if (!input_mode_active()) {
 			LCD_COMMAND(bpi_line2);
 			// Write min temperature
 			lcd_write_char('L');
@@ -236,12 +230,24 @@ void loop() {
 
 	if (alarm_active()) {
 		led_step();
+		if (alarm_is_sound_enabled()) {
+			digitalWrite(
+				PIN_ALARM,
+				(time_step_counter / STEPS_SWITCH_SOUND_ON_OFF) % 2 ? HIGH : LOW
+			);
+		}
 	} else if (alarm_was_active_last_time_step()) {
 		led_clear_all();
+		digitalWrite(PIN_ALARM, LOW);
 	}
 
-	digitalWrite(PIN_LED_BUILTIN, is_button_pressed() ? HIGH : LOW);
-	digitalWrite(PIN_ALARM, is_button_pressed() ? HIGH : LOW);
+	if (!input_mode_active() && was_button_pressed_long()) {
+		clear_button_press();
+		alarm_reset();
+		input_mode_enable();
+	}
+
+	input_time_step();
 
 	/* 8 bytes may take up to 16ms */
 	lcd_flush_bytes(bpi, 8);
