@@ -49,9 +49,15 @@ bool input_mode_active() {
 }
 
 void input_time_step() {
+	if (input_state == INPUT_IDLE) {
+		return;
+	}
+
+	if (is_button_pressed()) {
+		input_started = millis();
+	}
+
 	switch (input_state) {
-		case INPUT_IDLE:
-			return;
 		case INPUT_WAITING_DIGIT_1:
 			if (was_button_pressed_short()) {
 				clear_button_press();
@@ -60,12 +66,10 @@ void input_time_step() {
 					input_val = 0;
 				}
 				input_write_incremental_message();
-				input_started = millis();
 			} else if (was_button_pressed_long()) {
 				clear_button_press();
 				input_state = INPUT_WAITING_DIGIT_2;
 				input_write_incremental_message();
-				input_started = millis();
 			} else if (millis() - input_started > MS_INPUT_EXPIRE_TIME) {
 				// This input has expired
 				input_state = INPUT_IDLE;
@@ -73,6 +77,7 @@ void input_time_step() {
 				lcd_write_16_spaces();
 			}
 			break;
+
 		case INPUT_WAITING_DIGIT_2:
 			if (was_button_pressed_short()) {
 				clear_button_press();
@@ -82,7 +87,6 @@ void input_time_step() {
 					input_val++;
 				}
 				input_write_incremental_message();
-				input_started = millis();
 			} else if (was_button_pressed_long()) {
 				clear_button_press();
 				// Reset the input state
