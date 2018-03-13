@@ -40,11 +40,16 @@ Adafruit_NeoPixel strip(NUM_LEDS, PIN_LEDS, NEO_GRB + NEO_KHZ800);
 
 // Global variables
 DateTime dtStart;
+DateTime dtLast;
 DateTime dtCurrent;
 TimeSpan tsPowerOff;
 uint8_t tempMin;
 uint8_t tempMax;
 uint8_t tempCurrent;
+
+// Actions taken every N seconds (ensure that N % 60 == 0)
+#define SECONDS_SWITCH_UP_DOWN 2
+#define SECONDS_SAVE_TIME_INFO 5
 
 // Utility functions
 #include "lcd.h"
@@ -174,8 +179,9 @@ void setup() {
 		}
 	}
 
+	dtLast = dtCurrent - TimeSpan(1);
+
 	Serial.print(F("init ms=")); Serial.println(millis());
-	time_step();
 }
 
 void loop() {
@@ -184,16 +190,19 @@ void loop() {
 	// Check for button presses
 	button_time_step();
 
-	if (time_step_counter % STEPS_TEMP_READING == 0) {
+	dtCurrent = rtc.now();
+	if (dtLast.isBefore(dtCurrent)) {
+		dtLast = dtCurrent;
+		// A second elapsed.  Read the temperature and update the display.
 		tempCurrent = read_temp_uint8();
 		tempMin = min(tempMin, tempCurrent);
 		tempMax = max(tempMax, tempCurrent);
-		dtCurrent = rtc.now();
+		const uint8_t seconds = dtCurrent.second();
 
 		if (!lcd_showing_temp_message()) {
 			LCD_COMMAND(bpi_line1);
 			if (
-				(time_step_counter / STEPS_SWITCH_UP_DOWN) % 2 &&
+				(seconds / SECONDS_SWITCH_UP_DOWN) % 2 &&
 				tsPowerOff.totalseconds()
 			) {
 				lcd_write_string(F("Off: "));
@@ -223,10 +232,10 @@ void loop() {
 			lcd_write_char(tempMax >= alarm_temp ? '!' : 223);
 			lcd_write_4_spaces();
 		}
-	}
 
-	if (time_step_counter % STEPS_SAVE_TIME_INFO == 0) {
-		save_alarm_data();
+		if (seconds % SECONDS_SAVE_TIME_INFO == 0) {
+			save_alarm_data();
+		}
 	}
 
 	if (alarm_active()) {
@@ -258,10 +267,12 @@ void loop() {
 		}
 	}
 
+	// Process user input (alarm temperature), if any
 	input_time_step();
 
 	/* 8 bytes may take up to 16ms */
 	lcd_flush_bytes(bpi, 8);
 
+	// Delay the rest of this cycle
 	time_step();
 }

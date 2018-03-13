@@ -2,11 +2,7 @@
 
 #define MS_TIME_STEP 50
 
-#define STEPS_TEMP_READING 20
-#define STEPS_SAVE_TIME_INFO (STEPS_TEMP_READING * 5)
-
-#define STEPS_SWITCH_UP_DOWN (STEPS_TEMP_READING * 2)
-#define STEPS_SWITCH_SOUND_ON_OFF (STEPS_TEMP_READING / 2)
+#define STEPS_SWITCH_SOUND_ON_OFF 10
 
 uint32_t time_step_start = 0;
 uint32_t time_step_counter = 0;
