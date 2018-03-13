@@ -181,6 +181,7 @@ void setup() {
 			} else {
 				// No time-based alarm
 				tsPowerOff = tsPowerOffPrev;
+				// Check for temperature-too-high alarm from saved data
 				if (tempMax > alarm_temp || tsOverTemp.totalseconds() > 0) {
 					alarm_set();
 				}
@@ -247,7 +248,7 @@ void loop() {
 			lcd_write_integer((int16_t)tempCurrent - TEMP_OFFSET);
 			lcd_write_char(tempCurrent >= alarm_temp ? '!' : 223);
 			lcd_write_char(' ');
-			// Write min temperature
+			// Write max temperature
 			lcd_write_char('H');
 			lcd_write_integer((int16_t)tempMax - TEMP_OFFSET);
 			lcd_write_char(tempMax >= alarm_temp ? '!' : 223);
@@ -272,7 +273,7 @@ void loop() {
 	if (!input_mode_active()) {
 		if (was_button_pressed_long()) {
 			clear_button_press();
-			// Turn off any alarm and reeset all saved dates/times
+			// Turn off any alarm and reset all saved dates/times
 			alarm_reset();
 			// Show current alarm temperature
 			alarm_show_current_temp();
