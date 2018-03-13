@@ -15,10 +15,10 @@ void input_write_input_val() {
 			lcd_write_integer(input_val / 10);
 			break;
 		case INPUT_WAITING_DIGIT_2:
-			lcd_write_integer(input_val);
-			if (!input_val) {
+			if (input_val < 10) {
 				lcd_write_char('0');
 			}
+			lcd_write_integer(input_val);
 			break;
 	}
 }
