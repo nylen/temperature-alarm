@@ -178,6 +178,9 @@ void setup() {
 			} else {
 				// No time-based alarm
 				tsPowerOff = tsPowerOffPrev;
+				if (tempMax > alarm_temp || tsOverTemp.totalseconds() > 0) {
+					alarm_set();
+				}
 			}
 		}
 	}
