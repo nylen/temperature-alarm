@@ -13,13 +13,6 @@ circular_buffer<unsigned char> lcd_buffer(lcd_buffer_, LCD_BUFFER_SIZE);
 
 uint32_t lcd_temp_message_start = 0;
 
-void lcd_write_string(const char *text) {
-	size_t i = 0;
-	while (text[i] && !lcd_buffer.full()) {
-		lcd_buffer.put(text[i++]);
-	}
-}
-
 void lcd_write_char(unsigned char c) {
 	if (!lcd_buffer.full()) {
 		lcd_buffer.put(c);
