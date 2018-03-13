@@ -25,7 +25,7 @@ void alarm_clear() {
 void alarm_time_step() {
 	if ((alarm_state & ALARM_CAN_TRIGGER) > 0 && tempCurrent >= alarm_temp) {
 		alarm_set();
-	} else if (tempCurrent < alarm_temp) {
+	} else if (tempCurrent + 2 < alarm_temp) {
 		alarm_state |= ALARM_CAN_TRIGGER;
 	}
 }
