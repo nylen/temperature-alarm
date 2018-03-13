@@ -1,8 +1,8 @@
 // Actions taken every N seconds (ensure that N % 60 == 0)
-#define SECONDS_SWITCH_TIME_MESSAGE 2
 #define SECONDS_SAVE_TIME_INFO 5
 
 // Time-based messages
+#define SECONDS_SWITCH_TIME_MESSAGE 2
 #define TIME_MESSAGE_ON  0
 #define TIME_MESSAGE_OFF 1
 #define TIME_MESSAGE_HOT 2
