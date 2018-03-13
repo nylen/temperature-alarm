@@ -24,6 +24,7 @@ void input_write_input_val() {
 }
 
 void input_write_first_message() {
+	lcd_flush_bytes(bpi, LCD_BUFFER_SIZE);
 	LCD_COMMAND(bpi_line2);
 	lcd_write_string(F("Input: "));
 	input_write_input_val();

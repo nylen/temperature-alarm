@@ -68,5 +68,6 @@ void alarm_show_current_temp() {
 		lcd_write_char(128 + 15);
 		lcd_write_char(235);
 	}
+	lcd_flush_bytes(bpi, LCD_BUFFER_SIZE);
 	lcd_set_temporary_message();
 }
