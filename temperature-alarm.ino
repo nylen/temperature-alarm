@@ -259,9 +259,6 @@ void loop() {
 				(time_step_counter / STEPS_SWITCH_SOUND_ON_OFF) % 2 ? HIGH : LOW
 			);
 		}
-	} else if (alarm_was_active_last_time_step()) {
-		led_clear_all();
-		digitalWrite(PIN_ALARM, LOW);
 	}
 
 	if (!input_mode_active()) {
