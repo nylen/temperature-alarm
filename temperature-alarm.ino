@@ -283,7 +283,7 @@ void loop() {
 	// Process user input (alarm temperature), if any
 	input_time_step();
 
-	/* 8 bytes may take up to 16ms */
+	// 8 bytes may take up to 16ms
 	lcd_flush_bytes(bpi, 8);
 
 	// Delay the rest of this cycle
