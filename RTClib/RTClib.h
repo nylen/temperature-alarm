@@ -24,8 +24,6 @@ class TimeSpan;
 
 #define SECONDS_FROM_1970_TO_2000 946684800
 
-
-
 // Simple general-purpose date/time class (no TZ / DST / leap second handling!)
 class DateTime {
 public:
@@ -36,12 +34,47 @@ public:
     DateTime (const char* date, const char* time);
     DateTime (const __FlashStringHelper* date, const __FlashStringHelper* time);
     uint16_t year() const       { return 2000 + yOff; }
+    uint8_t rawYear() const     { return yOff; }
     uint8_t month() const       { return m; }
     uint8_t day() const         { return d; }
     uint8_t hour() const        { return hh; }
     uint8_t minute() const      { return mm; }
     uint8_t second() const      { return ss; }
     uint8_t dayOfTheWeek() const;
+
+    bool isBefore(DateTime other) {
+        if (yOff < other.yOff) {
+            return true;
+        } else if (yOff > other.yOff) {
+            return false;
+        }
+        if (m < other.m) {
+            return true;
+        } else if (m > other.m) {
+            return false;
+        }
+        if (d < other.d) {
+            return true;
+        } else if (d > other.d) {
+            return false;
+        }
+        if (hh < other.hh) {
+            return true;
+        } else if (hh > other.hh) {
+            return false;
+        }
+        if (mm < other.mm) {
+            return true;
+        } else if (mm > other.mm) {
+            return false;
+        }
+        if (ss < other.ss) {
+            return true;
+        } else if (ss > other.ss) {
+            return false;
+        }
+        return false;
+    }
 
     // 32-bit times as seconds since 1/1/2000
     long secondstime() const;   

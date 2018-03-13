@@ -1,4 +1,3 @@
-
 // from http://atlas-scientific.com/_files/code/ENV-TMP-Arduino-Sample-Code.pdf
 // for further improvements: http://www.avrfreaks.net/forum/one-digit
 double read_temp() {
@@ -28,4 +27,15 @@ double read_temp() {
 	temp = temp * 1.8 + 32;
 
 	return temp;
+}
+
+uint8_t read_temp_uint8() {
+	double temp = read_temp();
+	if (temp <= 0) {
+		return 0;
+	}
+	if (temp >= 255) { // something went badly wrong!
+		return 255;
+	}
+	return lround(temp);
 }

@@ -41,9 +41,35 @@ Adafruit_NeoPixel strip(NUM_LEDS, PIN_LEDS, NEO_GRB + NEO_KHZ800);
 // Utility functions
 #include "lcd.h"
 #include "temperature.h"
+#include "memory.h"
 #include "leds.h"
 #include "button.h"
 #include "time_step.h"
+#include "alarm.h"
+
+// Global variables
+DateTime dtStart;
+DateTime dtCurrent;
+TimeSpan tsPowerOff;
+uint8_t tempMin;
+uint8_t tempMax;
+uint8_t tempCurrent;
+uint8_t alarmTemp;
+
+void save_alarm_data() {
+	mem_write_start_time(&dtStart);
+	mem_write_latest_time(&dtCurrent);
+	mem_write_time_power_off(&tsPowerOff);
+	mem_write_min_max_temp(tempMin, tempMax);
+}
+
+void alarm_reset() {
+	dtStart = dtCurrent = rtc.now();
+	tsPowerOff = TimeSpan(0);
+	tempMin = tempMax = tempCurrent = read_temp_uint8();
+	alarm_clear();
+	save_alarm_data();
+}
 
 void setup() {
 	bool ok = true;
@@ -90,13 +116,17 @@ void setup() {
 		exit(0);
 	}
 
-	Serial.println(millis());
+	tempCurrent = read_temp_uint8();
+	mem_read_min_max_temp(&tempMin, &tempMax);
+	tempMin = min(tempMin, tempCurrent);
+	tempMax = max(tempMax, tempCurrent);
+	alarmTemp = mem_read_alarm_temp();
 
 	if (rtc.lostPower()) {
-		// TODO: Reset any timestamps saved in FRAM
-
 		// Set date/time to when this program was compiled
-		rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+		dtStart = dtCurrent = DateTime(F(__DATE__), F(__TIME__));
+		rtc.adjust(dtStart);
+		alarm_reset();
 		// Display a message indicating that clock was reset
 		LCD_COMMAND(bpi_line1);
 		lcd_write_string(F("Check clock batt"));
@@ -106,34 +136,108 @@ void setup() {
 		// Wait for button press and release
 		while (!is_button_pressed());
 		while (is_button_pressed());
+	} else {
+		// Read saved date/time values
+		mem_read_start_time(&dtStart);
+		DateTime dtLastOn;
+		mem_read_latest_time(&dtLastOn);
+		TimeSpan tsPowerOffPrev;
+		mem_read_time_power_off(&tsPowerOffPrev);
+		dtCurrent = rtc.now();
+		tsPowerOff = dtCurrent - dtLastOn;
+		// Equation 1:
+		//   dtStart
+		//   + (time previously online)
+		//   + tsPowerOff (time previously offline)
+		//   = dtLastOn
+		// Equation 2:
+		//   dtLastOn
+		//   + (new time offline)
+		//   = dtCurrent
+		// Check for error conditions that make the equations unsatisfiable.
+		// Any power-off times longer than 90 days will also cause a reset.
+		if (
+			dtLastOn.isBefore(dtStart) ||
+			dtLastOn.isBefore(dtStart + tsPowerOffPrev) ||
+			tsPowerOffPrev.totalseconds() / 3600 / 24 > 90 ||
+			dtCurrent.isBefore(dtLastOn) ||
+			tsPowerOff.totalseconds() / 3600 / 24 > 90 ||
+			tempMax < tempMin
+		) {
+			lcd_set_temporary_message(F("Saved data reset"));
+			alarm_reset();
+		} else {
+			// Power losses of less than 5 minutes will not cause an alarm
+			if (tsPowerOff.totalseconds() >= 5/* * 60 */) {
+				alarm_set();
+				tsPowerOff = tsPowerOff + tsPowerOffPrev;
+			} else if (tsPowerOffPrev.totalseconds()) {
+				// Power was previously lost and alarm has not been reset
+				alarm_set();
+				tsPowerOff = tsPowerOffPrev;
+			} else {
+				// No time-based alarm
+				tsPowerOff = tsPowerOffPrev;
+			}
+		}
 	}
 
-	time_step(false);
+	Serial.println(millis());
+	time_step();
 }
 
 void loop() {
-	led_step();
+	alarm_time_step();
 
 	if (time_step_counter % STEPS_TEMP_READING == 0) {
-		int temp = lround(read_temp());
-		LCD_COMMAND(bpi_line1);
-		lcd_write_integer(millis() % 30000);
-		lcd_write_char(' ');
-		lcd_write_integer(temp);
-		lcd_write_char(' ');
-		lcd_write_char(' ');
+		tempCurrent = read_temp_uint8();
+		tempMin = min(tempMin, tempCurrent);
+		tempMax = max(tempMax, tempCurrent);
+		dtCurrent = rtc.now();
 
-		LCD_COMMAND(bpi_line2);
-		lcd_write_integer(time_step_max_elapsed);
-		lcd_write_char(' ');
-		lcd_write_char(' ');
+		if (!lcd_showing_temp_message()) {
+			LCD_COMMAND(bpi_line1);
+			if (
+				(time_step_counter / STEPS_SWITCH_UP_DOWN) % 2 &&
+				tsPowerOff.totalseconds()
+			) {
+				lcd_write_string(F("Off: "));
+				lcd_write_TimeSpan(tsPowerOff);
+			} else {
+				lcd_write_string(F("On: "));
+				lcd_write_TimeSpan(dtCurrent - dtStart - tsPowerOff);
+			}
+			lcd_write_16_spaces();
+		}
+
+		if (true/*TODO: !is_accepting_temp_input()*/) {
+			LCD_COMMAND(bpi_line2);
+			// Write min temperature
+			lcd_write_char('L');
+			lcd_write_integer(tempMin);
+			lcd_write_char(223);
+			lcd_write_char(' ');
+			// Write current temperature
+			lcd_write_char('=');
+			lcd_write_integer(tempCurrent);
+			lcd_write_char(223);
+			lcd_write_char(' ');
+			// Write min temperature
+			lcd_write_char('H');
+			lcd_write_integer(tempMax);
+			lcd_write_char(223);
+			lcd_write_4_spaces();
+		}
 	}
 
-	if (time_step_counter % STEPS_TEMP_READING == STEPS_TEMP_READING / 2) {
-		LCD_COMMAND(bpi_line1);
-		lcd_write_string("test line 1 long string");
-		LCD_COMMAND(bpi_line2);
-		lcd_write_string("test line 2 long string");
+	if (time_step_counter % STEPS_SAVE_TIME_INFO == 0) {
+		save_alarm_data();
+	}
+
+	if (alarm_active()) {
+		led_step();
+	} else if (alarm_was_active_last_time_step()) {
+		led_clear_all();
 	}
 
 	digitalWrite(PIN_LED_BUILTIN, is_button_pressed() ? HIGH : LOW);
