@@ -267,11 +267,11 @@ void loop() {
 	if (!input_mode_active()) {
 		if (was_button_pressed_long()) {
 			clear_button_press();
-			// Reset all saved dates/times
+			// Turn off any alarm and reeset all saved dates/times
 			alarm_reset();
-			// Clear any temporary message
-			lcd_clear_temporary_message();
-			// Enter temperature input method
+			// Show current alarm temperature
+			alarm_show_current_temp();
+			// Enter temperature input mode
 			input_mode_enable();
 		} else if (was_button_pressed_short()) {
 			clear_button_press();
