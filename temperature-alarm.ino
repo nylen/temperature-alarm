@@ -50,6 +50,7 @@ TimeSpan tsOverTemp;
 uint8_t tempMin;
 uint8_t tempMax;
 uint8_t tempCurrent;
+uint8_t badTempReadings = 0;
 
 // Utility functions
 #include "lcd.h"
@@ -204,7 +205,21 @@ void loop() {
 	if (dtLast.isBefore(dtCurrent)) {
 		dtLast = dtCurrent;
 		// A second elapsed.  Read the temperature and update the display.
-		tempCurrent = read_temp_uint8();
+		uint8_t temp = read_temp_uint8();
+		// We do occasionally get bad readings, so ignore them as long as there
+		// aren't too many in a row.
+		if (temp >= 240) {
+			if (++badTempReadings >= 8) {
+				// Too many bad readings - trigger an alarm and a fairly
+				// obvious error condition.
+				tempCurrent = temp;
+				badTempReadings = 0;
+			}
+		} else {
+			// This reading is probably OK.
+			tempCurrent = temp;
+			badTempReadings = 0;
+		}
 		tempMin = min(tempMin, tempCurrent);
 		tempMax = max(tempMax, tempCurrent);
 		const uint8_t seconds = dtCurrent.second();
